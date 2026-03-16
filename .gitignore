@@ -1,0 +1,28 @@
+# Root
+.env
+.env.local
+.DS_Store
+*.log
+build_errors.txt
+build.md
+%USERPROFILE%/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+env.bak/
+venv.bak/
+
+# Node
+node_modules/
+dist/
+.next/
+coverage/
+.npm
+*-error.log
