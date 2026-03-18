@@ -22,7 +22,7 @@ export default function TopNav() {
         <img 
           src="/logo.png" 
           alt="AuditFlow Logo" 
-          style={{ width: 40, height: 40, objectFit: "contain", flexShrink: 0 }} 
+          style={{ width: 44, height: 44, objectFit: "contain", flexShrink: 0 }} 
         />
         <div>
           <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.15, letterSpacing: "-0.01em" }}>AuditFlow</div>
