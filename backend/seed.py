@@ -8,7 +8,7 @@ Usage:
 """
 import asyncio
 import uuid
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 
 from motor.motor_asyncio import AsyncIOMotorClient
 from config import settings
@@ -45,8 +45,8 @@ async def seed():
             "total_amount": amount,
             "currency": "USD",
             "invoice_date": str(date_ or yesterday),
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
             "retry_count": 0,
             "error_message": None,
         }
@@ -94,14 +94,14 @@ async def seed():
             "extracted_snapshot": {},
             "validation_errors": val_errors or [],
             "llm_used": llm_used,
-            "created_at": datetime.utcnow(),
+            "created_at": datetime.now(timezone.utc),
             "processing_time_ms": 340.5,
         }
 
     def make_log(doc_id, stage, status, message):
         return {
             "document_id": doc_id,
-            "timestamp": datetime.utcnow(),
+            "timestamp": datetime.now(timezone.utc),
             "stage": stage,
             "status": status,
             "message": message,
@@ -278,10 +278,9 @@ async def seed():
     # ─────────────────────────────────────────────────────────────────────────
     # Default Policy Rules
     # ─────────────────────────────────────────────────────────────────────────
-    import uuid as _uuid
     policies = [
         {
-            "rule_id": str(_uuid.uuid4()),
+            "rule_id": str(uuid.uuid4()),
             "name": "Amount Threshold",
             "description": "Flag any expense exceeding $1,000.",
             "rule_type": "amount_threshold",
@@ -289,11 +288,11 @@ async def seed():
             "threshold": 1000.0,
             "currency_whitelist": None,
             "severity": "high",
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
         },
         {
-            "rule_id": str(_uuid.uuid4()),
+            "rule_id": str(uuid.uuid4()),
             "name": "Currency Whitelist",
             "description": "Only allow USD, EUR, GBP, and INR.",
             "rule_type": "currency_whitelist",
@@ -301,11 +300,11 @@ async def seed():
             "threshold": None,
             "currency_whitelist": ["USD", "EUR", "GBP", "INR"],
             "severity": "medium",
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
         },
         {
-            "rule_id": str(_uuid.uuid4()),
+            "rule_id": str(uuid.uuid4()),
             "name": "No Weekend Expenses",
             "description": "Disallow expense submissions dated on Saturday or Sunday.",
             "rule_type": "weekend_expense",
@@ -313,11 +312,11 @@ async def seed():
             "threshold": None,
             "currency_whitelist": None,
             "severity": "medium",
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
         },
         {
-            "rule_id": str(_uuid.uuid4()),
+            "rule_id": str(uuid.uuid4()),
             "name": "No Future-Dated Documents",
             "description": "Reject invoices or receipts dated in the future.",
             "rule_type": "future_date",
@@ -325,8 +324,8 @@ async def seed():
             "threshold": None,
             "currency_whitelist": None,
             "severity": "high",
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
         },
     ]
     await db["policy_rules"].insert_many(policies)
