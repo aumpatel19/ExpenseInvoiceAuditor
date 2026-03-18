@@ -17,9 +17,12 @@ DATE_PATTERNS = [
     r"\b(\d{1,2}\s+\w{3,9}\s+\d{4})\b",
 ]
 AMOUNT_PATTERNS = [
-    r"(?:total|amount due|grand total|balance due)[:\s]*[\$€£₹]?\s*([\d,]+\.?\d*)",
-    r"[\$€£₹]\s*([\d,]+\.\d{2})\b",
-    r"\b([\d,]+\.\d{2})\s*(?:USD|EUR|GBP|INR)\b",
+    r"(?:total|amount due|grand total|balance due|total due|net amount|payable|pay this amount)[:\s]*[\$€£₹Rs.]*\s*([\d,]+\.?\d*)",
+    r"[\$€£₹]\s*([\d,]+\.?\d*)\b",
+    r"\b([\d,]+\.\d{2})\s*(?:USD|EUR|GBP|INR|CAD|AUD)\b",
+    r"(?:Rs\.?|INR)\s*([\d,]+\.?\d*)",
+    r"(?:total|amount)[:\s]+([\d,]+\.?\d*)",
+    r"^\s*([\d,]+\.\d{2})\s*$",  # bare decimal amount on its own line
 ]
 VENDOR_PATTERNS = [
     r"(?:from|vendor|supplier|company|invoice from|bill from|billed by)[:\s]+([A-Za-z0-9 &.,'-]+)",
@@ -199,15 +202,14 @@ async def extract_from_text(
             raw_fields["receipt_number"] = rec_num
             raw_fields["raw_text_snippet"] = raw_text[:500]
 
-            # Check minimum required fields
+            # Check minimum required fields — if missing, log warning and proceed at low confidence
+            # (retrying the same regex on the same text will never help)
             missing = [
                 f for f in ["vendor_name", "total_amount"]
                 if raw_fields.get(f) is None
             ]
-            if missing and retry_count < max_retries - 1:
-                logger.warning(f"[Extract] Missing required fields: {missing}. Retrying.")
-                retry_count += 1
-                continue
+            if missing:
+                logger.warning(f"[Extract] Missing fields after regex pass: {missing}. Proceeding with low confidence.")
 
             confidence = _calculate_confidence(raw_fields)
             raw_fields["extraction_confidence"] = confidence

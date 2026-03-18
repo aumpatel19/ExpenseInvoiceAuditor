@@ -38,7 +38,7 @@ class ExtractedDocument(BaseModel):
     currency: str = "USD"
     subtotal: Optional[float] = None
     tax: Optional[float] = None
-    total_amount: float
+    total_amount: Optional[float] = None
     payment_method: Optional[str] = None
     line_items: Optional[List[LineItem]] = None
     category: Optional[str] = None
@@ -71,6 +71,11 @@ class ExtractedDocument(BaseModel):
                 raise ValueError(
                     f"Total amount {self.total_amount} does not match subtotal+tax={expected}"
                 )
+        # If total_amount missing but subtotal+tax available, infer it
+        if self.total_amount is None and self.subtotal is not None and self.tax is not None:
+            self.total_amount = round(self.subtotal + self.tax, 2)
+        elif self.total_amount is None and self.subtotal is not None:
+            self.total_amount = self.subtotal
         return self
 
 
