@@ -188,7 +188,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Table */}
-        <div style={{ borderRadius: "var(--radius-lg)", border: "1px solid var(--border)", overflow: "hidden" }}>
+        <div style={{ borderRadius: "var(--radius-lg)", border: "1px solid var(--border)", overflowX: "clip", overflowY: "clip" }}>
           <table className="audit-table">
             <thead>
               <tr>
@@ -197,7 +197,7 @@ export default function DashboardPage() {
                 <th>Vendor</th>
                 <th>Amount</th>
                 <th>Date</th>
-                <th style={{ width: 140 }}></th>
+                <th></th>
               </tr>
             </thead>
             <tbody>

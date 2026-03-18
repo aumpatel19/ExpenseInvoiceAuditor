@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search, Settings, Activity } from "lucide-react";
+import { Search, Settings } from "lucide-react";
 
 const NAV_TABS = [
   { href: "/",          label: "Dashboard" },
@@ -19,14 +19,11 @@ export default function TopNav() {
     <header className="top-nav">
       {/* Brand */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-        <div style={{
-          width: 36, height: 36, borderRadius: "50%",
-          background: "linear-gradient(135deg, var(--accent) 0%, #e8b84b 100%)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: "0 2px 8px rgba(201,151,58,0.30)", flexShrink: 0,
-        }}>
-          <Activity size={16} color="white" strokeWidth={2.2} />
-        </div>
+        <img 
+          src="/logo.png" 
+          alt="AuditFlow Logo" 
+          style={{ width: 40, height: 40, objectFit: "contain", flexShrink: 0 }} 
+        />
         <div>
           <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.15, letterSpacing: "-0.01em" }}>AuditFlow</div>
           <div style={{ fontSize: 9, color: "var(--text-muted)", letterSpacing: "0.09em", fontWeight: 600, textTransform: "uppercase" }}>EXPENSE AUDITOR</div>
