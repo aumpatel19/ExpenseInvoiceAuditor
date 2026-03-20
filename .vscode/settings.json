@@ -1,0 +1,41 @@
+{
+  // ── Python interpreter (absolute path — avoids ${workspaceFolder} resolution issues) ──
+  "python.defaultInterpreterPath": "C:\\Users\\Aum\\OneDrive\\Desktop\\ExpenseInvoiceAuditor\\.venv\\Scripts\\python.exe",
+  "python.terminal.activateEnvironment": true,
+
+  // ── Language server: Pylance (official Microsoft extension) ────────────────
+  "python.languageServer": "Pylance",
+
+  // ── Pylance import resolution ──────────────────────────────────────────────
+  // Tells Pylance that 'backend/' is the root for local imports like:
+  //   from services.ocr.base import ...
+  //   from schemas.document import ...
+  "python.analysis.extraPaths": [
+    "C:\\Users\\Aum\\OneDrive\\Desktop\\ExpenseInvoiceAuditor\\backend"
+  ],
+  "python.analysis.venvPath": "C:\\Users\\Aum\\OneDrive\\Desktop\\ExpenseInvoiceAuditor",
+  "python.analysis.venv": ".venv",
+  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.autoImportCompletions": true,
+
+  // ── Disable Pyre2 type checking (Pylance handles it better) ───────────────
+  "pyre2.enableTypeChecking": false,
+
+  // ── Editor ─────────────────────────────────────────────────────────────────
+  "editor.formatOnSave": true,
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.python"
+  },
+
+  // ── File exclusions ────────────────────────────────────────────────────────
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.next": true
+  },
+  "search.exclude": {
+    "**/__pycache__": true,
+    "**/.next": true,
+    "**/node_modules": true,
+    "**/.venv": true
+  }
+}

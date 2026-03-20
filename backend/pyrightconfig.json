@@ -1,0 +1,11 @@
+{
+  "venvPath": "C:\\Users\\Aum\\OneDrive\\Desktop\\ExpenseInvoiceAuditor",
+  "venv": ".venv",
+  "pythonVersion": "3.11",
+  "pythonPlatform": "Windows",
+  "include": ["."],
+  "exclude": ["__pycache__", "tests"],
+  "reportMissingImports": false,
+  "reportMissingModuleSource": false,
+  "typeCheckingMode": "basic"
+}

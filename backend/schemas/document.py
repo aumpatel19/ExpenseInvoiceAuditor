@@ -30,7 +30,7 @@ class LineItem(BaseModel):
 
 class ExtractedDocument(BaseModel):
     document_type: DocumentType
-    vendor_name: str
+    vendor_name: Optional[str] = None  # Optional — missing vendor caught by rule engine
     invoice_number: Optional[str] = None
     receipt_number: Optional[str] = None
     invoice_date: Optional[date] = None

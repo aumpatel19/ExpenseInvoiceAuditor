@@ -7,7 +7,7 @@ from schemas.document import ExtractedDocument, ValidationErrorReport
 
 logger = logging.getLogger(__name__)
 
-REQUIRED_FIELDS = ["vendor_name", "total_amount"]
+REQUIRED_FIELDS = ["total_amount"]  # vendor_name is Optional — caught as audit finding instead
 
 
 def validate_document(

@@ -1,0 +1,10 @@
+{
+  "site_package_search_strategy": "pep561",
+  "search_path": ["."],
+  "python_interpreter": "../.venv/Scripts/python.exe",
+  "exclude": [
+    ".venv",
+    "__pycache__",
+    "tests"
+  ]
+}

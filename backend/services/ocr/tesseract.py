@@ -1,4 +1,6 @@
 import io
+import os
+import sys
 import logging
 from typing import Optional
 
@@ -9,6 +11,53 @@ logger = logging.getLogger(__name__)
 
 # Tesseract config — PSM 6: assume a single uniform block of text
 TESSERACT_CONFIG = "--oem 3 --psm 6"
+
+# ─── Auto-configure Tesseract binary path on Windows ─────────────────────────
+def _configure_tesseract():
+    """
+    On Windows, Tesseract is typically installed at a known path but NOT added
+    to PATH automatically. This function detects the binary and sets pytesseract's
+    tesseract_cmd so OCR works without manual PATH configuration.
+    """
+    if sys.platform != "win32":
+        return  # On Linux/Mac, 'tesseract' is typically on PATH already
+
+    try:
+        import pytesseract
+
+        # If already works, nothing to do
+        try:
+            pytesseract.get_tesseract_version()
+            logger.info("[OCR] Tesseract found on system PATH.")
+            return
+        except Exception:
+            pass
+
+        # Common Windows install locations
+        candidate_paths = [
+            r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+            r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
+            r"C:\Users\{}\AppData\Local\Tesseract-OCR\tesseract.exe".format(os.environ.get("USERNAME", "")),
+            r"C:\tools\Tesseract-OCR\tesseract.exe",
+        ]
+
+        for path in candidate_paths:
+            if os.path.isfile(path):
+                pytesseract.pytesseract.tesseract_cmd = path
+                logger.info(f"[OCR] Tesseract binary found at: {path}")
+                return
+
+        logger.warning(
+            "[OCR] Tesseract binary not found in common Windows paths. "
+            "OCR will fail unless Tesseract is on your system PATH. "
+            "Install from the bundled tesseract-installer.exe and ensure it is added to PATH."
+        )
+    except ImportError:
+        logger.warning("[OCR] pytesseract not installed. Run: pip install pytesseract")
+
+
+# Configure at module load time
+_configure_tesseract()
 
 
 class TesseractOCRProvider(OCRProvider):
@@ -71,7 +120,27 @@ class TesseractOCRProvider(OCRProvider):
                 provider="tesseract",
                 recoverable=False,
             )
-        images = convert_from_bytes(file_bytes, dpi=200)
+
+        try:
+            images = convert_from_bytes(file_bytes, dpi=200)
+        except Exception as e:
+            err_str = str(e).lower()
+            # Detect common Poppler-missing error on Windows
+            if "poppler" in err_str or "pdftoppm" in err_str or "pdfinfo" in err_str or "unable to get page count" in err_str:
+                raise OCRExtractionError(
+                    "Poppler is not installed or not on PATH. "
+                    "PDF to image conversion requires Poppler binaries. "
+                    "Windows: Download from https://github.com/oschwartz10612/poppler-windows/releases "
+                    "and add the 'Library/bin' folder to your system PATH.",
+                    provider="tesseract",
+                    recoverable=False,
+                )
+            raise OCRExtractionError(
+                f"PDF conversion failed: {e}",
+                provider="tesseract",
+                recoverable=True,
+            )
+
         all_text = []
         for i, img in enumerate(images):
             page_text = pytesseract.image_to_string(img, config=TESSERACT_CONFIG)
