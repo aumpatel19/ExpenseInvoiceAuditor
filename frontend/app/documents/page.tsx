@@ -8,27 +8,36 @@ import BackendError from "../components/BackendError";
 import Link from "next/link";
 import { Search, SlidersHorizontal, ArrowRight, TrendingUp } from "lucide-react";
 
+const PAGE_SIZE = 20;
+
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState<DocumentListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState({ status: "", vendor: "", type: "" });
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
 
-  const load = () => {
+  const load = (pageNum = 0) => {
     setLoading(true);
     setError(null);
     api.listDocuments({
       status: filter.status || undefined,
       vendor: filter.vendor || undefined,
       document_type: filter.type || undefined,
-      limit: 100,
+      limit: PAGE_SIZE + 1,
+      skip: pageNum * PAGE_SIZE,
     })
-      .then(setDocuments)
+      .then((data) => {
+        setHasMore(data.length > PAGE_SIZE);
+        setDocuments(data.slice(0, PAGE_SIZE));
+      })
       .catch((e) => setError(e instanceof Error ? e.message : "Failed to load"))
       .finally(() => setLoading(false));
   };
 
-  useEffect(load, [filter]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setPage(0); load(0); }, [filter]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(page); }, [page]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (error) {
     return (
@@ -138,6 +147,29 @@ export default function DocumentsPage() {
           </table>
         </div>
       </motion.div>
+
+      {/* Pagination */}
+      {(page > 0 || hasMore) && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginTop: "1.25rem" }}>
+          <button
+            className="btn btn-ghost"
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0}
+            style={{ fontSize: 12, opacity: page === 0 ? 0.4 : 1 }}
+          >
+            ← Previous
+          </button>
+          <span style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 500 }}>Page {page + 1}</span>
+          <button
+            className="btn btn-ghost"
+            onClick={() => setPage((p) => p + 1)}
+            disabled={!hasMore}
+            style={{ fontSize: 12, opacity: !hasMore ? 0.4 : 1 }}
+          >
+            Next →
+          </button>
+        </motion.div>
+      )}
     </div>
   );
 }

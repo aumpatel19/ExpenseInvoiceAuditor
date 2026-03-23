@@ -8,7 +8,7 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks,
 from fastapi.responses import JSONResponse
 
 from config import settings
-from db.mongo import documents_col, extracted_payloads_col, audit_results_col
+from db.mongo import documents_col, extracted_payloads_col, audit_results_col, file_storage_col
 from schemas.document import (
     DocumentRecord, DocumentStatus, UploadResponse, DocumentListItem
 )
@@ -184,6 +184,11 @@ async def upload_document(
         mime_type=file.content_type,
     )
     await documents_col().insert_one(record.model_dump(mode="json"))
+    await file_storage_col().replace_one(
+        {"document_id": document_id},
+        {"document_id": document_id, "file_bytes": file_bytes, "mime_type": file.content_type},
+        upsert=True,
+    )
     await log_stage(document_id, "upload", "success", f"File '{file.filename}' uploaded ({len(file_bytes)} bytes).")
 
     # Start pipeline in background
@@ -244,11 +249,17 @@ async def reprocess_document(document_id: str, background_tasks: BackgroundTasks
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found.")
 
-    # We don't store file bytes in mongo — this endpoint is a status reset trigger
-    # In a production system, file bytes would be stored in S3 or similar
-    await _set_status(document_id, DocumentStatus.processing)
+    stored = await file_storage_col().find_one({"document_id": document_id})
+    if not stored:
+        raise HTTPException(status_code=422, detail="Original file not found. Cannot reprocess.")
+
+    file_bytes = stored["file_bytes"]
+    mime_type = stored["mime_type"]
+
+    await _set_status(document_id, DocumentStatus.uploaded)
     await log_stage(document_id, "reprocess", "queued", "Manual reprocess triggered.")
-    return {"message": "Reprocessing queued.", "document_id": document_id}
+    background_tasks.add_task(process_document_pipeline, document_id, file_bytes, mime_type)
+    return {"message": "Reprocessing started.", "document_id": document_id}
 
 
 @router.get("/documents/{document_id}/audit")
