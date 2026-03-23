@@ -8,9 +8,10 @@ import { api, type MetricsSummary } from "@/lib/api";
 interface Props {
   open: boolean;
   onClose: () => void;
+  onLogout?: () => void;
 }
 
-export default function ProfileModal({ open, onClose }: Props) {
+export default function ProfileModal({ open, onClose, onLogout }: Props) {
   const [metrics, setMetrics] = useState<MetricsSummary | null>(null);
 
   useEffect(() => {
@@ -102,13 +103,13 @@ export default function ProfileModal({ open, onClose }: Props) {
                 </div>
               </div>
               <button
-                onClick={onClose}
-                style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: "var(--radius-md)", background: "none", border: "1px solid var(--border)", cursor: "pointer", width: "100%", marginTop: 2, transition: "background 0.15s" }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
+                onClick={() => { onClose(); onLogout?.(); }}
+                style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: "var(--radius-md)", background: "none", border: "1px solid var(--status-flagged-bd)", cursor: "pointer", width: "100%", marginTop: 2, transition: "background 0.15s" }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "var(--status-flagged-bg)")}
                 onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
               >
-                <LogOut size={14} color="var(--text-muted)" />
-                <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)" }}>Sign Out</span>
+                <LogOut size={14} color="var(--status-flagged-fg)" />
+                <span style={{ fontSize: 12, fontWeight: 600, color: "var(--status-flagged-fg)" }}>Sign Out</span>
               </button>
             </div>
           </motion.div>

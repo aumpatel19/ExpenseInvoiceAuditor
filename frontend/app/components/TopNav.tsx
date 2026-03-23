@@ -16,7 +16,11 @@ const NAV_TABS = [
   { href: "/policies",  label: "Policies" },
 ];
 
-export default function TopNav() {
+interface Props {
+  onLogout?: () => void;
+}
+
+export default function TopNav({ onLogout }: Props) {
   const pathname = usePathname();
   const [searchOpen, setSearchOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -88,7 +92,7 @@ export default function TopNav() {
 
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
       <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
-      <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} />
+      <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} onLogout={onLogout} />
     </>
   );
 }

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Sidebar from "./components/Sidebar";
-import TopNav from "./components/TopNav";
+import AuthShell from "./components/AuthShell";
 
 export const metadata: Metadata = {
   title: "AuditFlow — Expense & Invoice Auditor",
@@ -17,18 +16,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         display: "flex",
         alignItems: "stretch",
       }}>
-        <div
-          className="app-shell"
-          style={{ flex: 1, height: "calc(100vh - 3rem)", overflow: "hidden" }}
-        >
-          <TopNav />
-          <div className="app-body">
-            <Sidebar />
-            <main style={{ flex: 1, overflowY: "auto", background: "var(--bg-panel)" }}>
-              {children}
-            </main>
-          </div>
-        </div>
+        <AuthShell>{children}</AuthShell>
       </body>
     </html>
   );

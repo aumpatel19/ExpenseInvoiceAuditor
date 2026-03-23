@@ -1,10 +1,31 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
 
+function getToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("auth_token");
+}
+
+function handleUnauthorized() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem("auth_token");
+  localStorage.removeItem("auth_username");
+  window.location.reload();
+}
+
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
+  const token = getToken();
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: { "Content-Type": "application/json", ...options?.headers },
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options?.headers,
+    },
     ...options,
   });
+  if (res.status === 401) {
+    handleUnauthorized();
+    throw new Error("Session expired. Please log in again.");
+  }
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
     throw new Error(err.detail || `API error ${res.status}`);
@@ -158,9 +179,15 @@ export const api = {
   getAuditResult: (id: string) => apiFetch<AuditResult>(`/documents/${id}/audit`),
 
   uploadDocument: async (file: File): Promise<{ document_id: string; status: string; message: string }> => {
+    const token = getToken();
     const form = new FormData();
     form.append("file", file);
-    const res = await fetch(`${API_BASE}/documents/upload`, { method: "POST", body: form });
+    const res = await fetch(`${API_BASE}/documents/upload`, {
+      method: "POST",
+      body: form,
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (res.status === 401) { handleUnauthorized(); throw new Error("Session expired."); }
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: res.statusText }));
       throw new Error(err.detail || `Upload failed: ${res.status}`);
