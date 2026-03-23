@@ -21,6 +21,7 @@ async def connect_db():
     await _db["policy_rules"].create_index("rule_id", unique=True)
     await _db["processing_logs"].create_index("document_id")
     await _db["file_storage"].create_index("document_id", unique=True)
+    await _db["users"].create_index("username", unique=True)
     print(f"[DB] Connected to MongoDB: {settings.db_name}")
 
 
@@ -66,3 +67,7 @@ def ground_truth_col():
 
 def file_storage_col():
     return _db["file_storage"]
+
+
+def users_col():
+    return _db["users"]
