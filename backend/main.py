@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -7,13 +7,10 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from db.mongo import connect_db, close_db
-from auth import get_current_user
 from api import documents, metrics, eval as eval_router, policies
 from api.auth import router as auth_router
 
 limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
-
-_auth = [Depends(get_current_user)]
 
 
 @asynccontextmanager
@@ -42,14 +39,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Auth router — public (no token required)
-app.include_router(auth_router, prefix="/api/v1", tags=["auth"])
-
-# Protected routers — require valid JWT
-app.include_router(documents.router, prefix="/api/v1", tags=["documents"], dependencies=_auth)
-app.include_router(metrics.router,   prefix="/api/v1", tags=["metrics"],   dependencies=_auth)
-app.include_router(eval_router.router, prefix="/api/v1", tags=["eval"],    dependencies=_auth)
-app.include_router(policies.router,  prefix="/api/v1", tags=["policies"],  dependencies=_auth)
+app.include_router(auth_router,        prefix="/api/v1", tags=["auth"])
+app.include_router(documents.router,   prefix="/api/v1", tags=["documents"])
+app.include_router(metrics.router,     prefix="/api/v1", tags=["metrics"])
+app.include_router(eval_router.router, prefix="/api/v1", tags=["eval"])
+app.include_router(policies.router,    prefix="/api/v1", tags=["policies"])
 
 
 @app.get("/healthz", tags=["health"])
