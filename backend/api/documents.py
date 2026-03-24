@@ -4,9 +4,9 @@ import uuid
 from datetime import datetime
 from typing import Optional, List
 
-from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks, Query
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks, Query, Depends
 
+from auth import get_current_user
 from config import settings
 from db.mongo import documents_col, extracted_payloads_col, audit_results_col, file_storage_col
 from schemas.document import (
@@ -159,8 +159,8 @@ async def process_document_pipeline(document_id: str, file_bytes: bytes, mime_ty
 async def upload_document(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user),
 ):
-    # Validate MIME type
     if file.content_type not in ALLOWED_MIME_TYPES:
         raise HTTPException(
             status_code=400,
@@ -169,7 +169,6 @@ async def upload_document(
 
     file_bytes = await file.read()
 
-    # Validate file size
     if len(file_bytes) > settings.max_upload_bytes:
         raise HTTPException(
             status_code=413,
@@ -183,15 +182,18 @@ async def upload_document(
         file_size_bytes=len(file_bytes),
         mime_type=file.content_type,
     )
-    await documents_col().insert_one(record.model_dump(mode="json"))
+    doc_dict = record.model_dump(mode="json")
+    doc_dict["username"] = current_user["username"]
+
+    await documents_col().insert_one(doc_dict)
     await file_storage_col().replace_one(
         {"document_id": document_id},
-        {"document_id": document_id, "file_bytes": file_bytes, "mime_type": file.content_type},
+        {"document_id": document_id, "username": current_user["username"],
+         "file_bytes": file_bytes, "mime_type": file.content_type},
         upsert=True,
     )
     await log_stage(document_id, "upload", "success", f"File '{file.filename}' uploaded ({len(file_bytes)} bytes).")
 
-    # Start pipeline in background
     background_tasks.add_task(process_document_pipeline, document_id, file_bytes, file.content_type)
 
     return UploadResponse(
@@ -207,10 +209,11 @@ async def list_documents(
     status: Optional[str] = Query(None),
     vendor: Optional[str] = Query(None),
     document_type: Optional[str] = Query(None),
-    limit: int = Query(50, le=200),
+    limit: int = Query(20, le=200),
     skip: int = Query(0, ge=0),
+    current_user: dict = Depends(get_current_user),
 ):
-    query = {}
+    query: dict = {"username": current_user["username"]}
     if status:
         query["status"] = status
     if vendor:
@@ -224,8 +227,10 @@ async def list_documents(
 
 
 @router.get("/documents/{document_id}")
-async def get_document(document_id: str):
-    doc = await documents_col().find_one({"id": document_id}, {"_id": 0})
+async def get_document(document_id: str, current_user: dict = Depends(get_current_user)):
+    doc = await documents_col().find_one(
+        {"id": document_id, "username": current_user["username"]}, {"_id": 0}
+    )
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found.")
 
@@ -244,8 +249,14 @@ async def get_document(document_id: str):
 
 
 @router.post("/documents/{document_id}/process")
-async def reprocess_document(document_id: str, background_tasks: BackgroundTasks):
-    doc = await documents_col().find_one({"id": document_id}, {"_id": 0})
+async def reprocess_document(
+    document_id: str,
+    background_tasks: BackgroundTasks,
+    current_user: dict = Depends(get_current_user),
+):
+    doc = await documents_col().find_one(
+        {"id": document_id, "username": current_user["username"]}, {"_id": 0}
+    )
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found.")
 
@@ -263,7 +274,14 @@ async def reprocess_document(document_id: str, background_tasks: BackgroundTasks
 
 
 @router.get("/documents/{document_id}/audit")
-async def get_audit_result(document_id: str):
+async def get_audit_result(document_id: str, current_user: dict = Depends(get_current_user)):
+    # Verify ownership via document
+    doc = await documents_col().find_one(
+        {"id": document_id, "username": current_user["username"]}, {"_id": 0}
+    )
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found.")
+
     audit = await audit_results_col().find_one({"document_id": document_id}, {"_id": 0})
     if not audit:
         raise HTTPException(status_code=404, detail="Audit result not found.")

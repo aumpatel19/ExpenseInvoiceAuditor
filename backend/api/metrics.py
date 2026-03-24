@@ -1,31 +1,38 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from auth import get_current_user
 from db.mongo import documents_col, audit_results_col
 
 router = APIRouter()
 
 
 @router.get("/metrics/summary")
-async def get_metrics_summary():
-    # Document status counts
+async def get_metrics_summary(current_user: dict = Depends(get_current_user)):
+    username = current_user["username"]
+
+    # Document status counts — scoped to this user
     pipeline = [
+        {"$match": {"username": username}},
         {"$group": {"_id": "$status", "count": {"$sum": 1}}}
     ]
     status_cursor = documents_col().aggregate(pipeline)
     status_results = await status_cursor.to_list(length=20)
     status_map = {item["_id"]: item["count"] for item in status_results}
-
     total = sum(status_map.values())
 
-    # Audit outcome counts
+    # Audit outcome counts — scoped via document ownership
+    user_doc_ids = await documents_col().distinct("id", {"username": username})
+
     audit_pipeline = [
+        {"$match": {"document_id": {"$in": user_doc_ids}}},
         {"$group": {"_id": "$overall_status", "count": {"$sum": 1}}}
     ]
     audit_cursor = audit_results_col().aggregate(audit_pipeline)
     audit_results = await audit_cursor.to_list(length=20)
     audit_map = {item["_id"]: item["count"] for item in audit_results}
 
-    # Duplicate and policy violation findings count
+    # Duplicate findings count
     dup_pipeline = [
+        {"$match": {"document_id": {"$in": user_doc_ids}}},
         {"$unwind": "$findings"},
         {"$match": {"findings.finding_type": {"$in": ["exact_duplicate", "fuzzy_duplicate"]}}},
         {"$count": "count"},
@@ -34,7 +41,9 @@ async def get_metrics_summary():
     dup_result = await dup_cursor.to_list(length=1)
     duplicate_count = dup_result[0]["count"] if dup_result else 0
 
+    # Policy violation findings count
     policy_pipeline = [
+        {"$match": {"document_id": {"$in": user_doc_ids}}},
         {"$unwind": "$findings"},
         {
             "$match": {
