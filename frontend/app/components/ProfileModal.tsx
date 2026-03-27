@@ -13,9 +13,11 @@ interface Props {
 
 export default function ProfileModal({ open, onClose, onLogout }: Props) {
   const [metrics, setMetrics] = useState<MetricsSummary | null>(null);
+  const [username, setUsername] = useState("");
 
   useEffect(() => {
     if (open) {
+      setUsername(localStorage.getItem("auth_username") ?? "User");
       api.getMetrics().then(setMetrics).catch(() => null);
     }
   }, [open]);
@@ -57,11 +59,11 @@ export default function ProfileModal({ open, onClose, onLogout }: Props) {
             {/* Avatar + info */}
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "8px 24px 24px", gap: 10 }}>
               <div style={{ width: 64, height: 64, borderRadius: "50%", background: "var(--text-primary)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, fontWeight: 700, color: "#fff" }}>
-                A
+                {username[0]?.toUpperCase() ?? "?"}
               </div>
               <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 17, fontWeight: 700, color: "var(--text-primary)" }}>Aum</div>
-                <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>Senior Auditor · AuditFlow</div>
+                <div style={{ fontSize: 17, fontWeight: 700, color: "var(--text-primary)" }}>{username}</div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>AuditFlow Member</div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 20, background: "var(--status-approved-bg)", border: "1px solid var(--status-approved-bd)" }}>
                 <div style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--status-approved-fg)" }} />
@@ -92,7 +94,7 @@ export default function ProfileModal({ open, onClose, onLogout }: Props) {
                 <User size={14} color="var(--text-muted)" />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)" }}>Account</div>
-                  <div style={{ fontSize: 11, color: "var(--text-muted)" }}>aum@auditflow.local</div>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{username}</div>
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: "var(--radius-md)", background: "var(--bg-subtle)", border: "1px solid var(--border-light)" }}>

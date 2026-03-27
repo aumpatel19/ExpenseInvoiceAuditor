@@ -8,7 +8,7 @@ interface Props {
   onLogin: (token: string, username: string) => void;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "/api/v1";
 
 export default function LoginForm({ onLogin }: Props) {
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -143,7 +143,7 @@ export default function LoginForm({ onLogin }: Props) {
                   type={showPass ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder={mode === "signup" ? "Min. 6 characters" : "••••••••"}
+                  placeholder={mode === "signup" ? "Min. 8 characters" : "••••••••"}
                   autoComplete={mode === "login" ? "current-password" : "new-password"}
                   required
                   style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontSize: 13.5, color: "var(--text-primary)", padding: "10px 0", fontFamily: "inherit" }}

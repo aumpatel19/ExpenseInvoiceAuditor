@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Search, Settings } from "lucide-react";
@@ -25,6 +25,12 @@ export default function TopNav({ onLogout }: Props) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [initial, setInitial] = useState("?");
+
+  useEffect(() => {
+    const u = localStorage.getItem("auth_username") ?? "";
+    setInitial(u[0]?.toUpperCase() ?? "?");
+  }, []);
 
   return (
     <>
@@ -85,7 +91,7 @@ export default function TopNav({ onLogout }: Props) {
             onMouseEnter={e => (e.currentTarget.style.opacity = "0.85")}
             onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
           >
-            A
+            {initial}
           </div>
         </div>
       </header>

@@ -33,7 +33,7 @@ export default function SettingsModal({ open, onClose }: Props) {
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "/api/v1";
 
   return (
     <AnimatePresence>

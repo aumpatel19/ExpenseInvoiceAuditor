@@ -8,6 +8,7 @@ from slowapi.middleware import SlowAPIMiddleware
 
 from db.mongo import connect_db, close_db
 from auth import get_current_user
+from config import settings
 from api import documents, metrics, eval as eval_router, policies
 from api.auth import router as auth_router
 
@@ -35,7 +36,7 @@ app.add_middleware(SlowAPIMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

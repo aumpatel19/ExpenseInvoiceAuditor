@@ -25,14 +25,19 @@ class Settings(BaseSettings):
     policy_allow_weekend_expenses: bool = Field(default=False, alias="POLICY_ALLOW_WEEKEND_EXPENSES")
 
     # Auth
-    jwt_secret: str = Field(default="change-me-in-production-secret-key-32chars", alias="JWT_SECRET")
+    jwt_secret: str = Field(default="dev-only-secret-replace-in-production-32x", alias="JWT_SECRET")
     jwt_expire_hours: int = Field(default=24, alias="JWT_EXPIRE_HOURS")
-    auth_username: str = Field(default="admin", alias="AUTH_USERNAME")
-    auth_password: str = Field(default="auditflow123", alias="AUTH_PASSWORD")
+
+    # CORS — comma-separated list of allowed origins
+    cors_origins: str = Field(default="http://localhost:3000", alias="CORS_ORIGINS")
 
     # App
     app_env: str = Field(default="development", alias="APP_ENV")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
+
+    @property
+    def cors_origins_list(self) -> List[str]:
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 
     @property
     def allowed_currencies_list(self) -> List[str]:

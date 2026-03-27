@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, RefreshCw, Server } from "lucide-react";
+import { RefreshCw, Server } from "lucide-react";
 
 export default function BackendError({ onRetry, message }: { onRetry?: () => void; message?: string }) {
   return (
@@ -13,11 +13,8 @@ export default function BackendError({ onRetry, message }: { onRetry?: () => voi
         <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.65, maxWidth: 340 }}>
           {message || (
             <>
-              Cannot reach the API at <code style={{ fontSize: 11, background: "var(--bg-subtle)", padding: "1px 5px", borderRadius: 4 }}>localhost:8000</code>.
-              <br />Start the backend with:
-              <code style={{ display: "block", marginTop: 8, padding: "8px 12px", borderRadius: "var(--radius-md)", background: "var(--bg-subtle)", border: "1px solid var(--border)", fontSize: 11, textAlign: "left", color: "var(--status-extracted-fg)" }}>
-                uvicorn main:app --reload --port 8000
-              </code>
+              Cannot reach the backend API.
+              <br />Please check your connection or try again shortly.
             </>
           )}
         </p>
