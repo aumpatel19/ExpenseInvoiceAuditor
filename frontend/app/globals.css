@@ -349,3 +349,35 @@ body {
 .fade-in-up { animation: fadeInUp 0.3s ease-out both; }
 
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* ─── Responsive ─────────────────────────────────────────────────────────── */
+/* Desktop: show desktop shell, hide mobile shell */
+@media (min-width: 768px) {
+  .desktop-shell { display: flex !important; flex-direction: column; }
+  .mobile-shell  { display: none !important; }
+}
+
+/* Mobile: hide desktop shell, show mobile shell */
+@media (max-width: 767px) {
+  .desktop-shell { display: none !important; }
+  .mobile-shell  { display: flex !important; }
+
+  /* Top nav: hide center tabs on mobile, keep icons */
+  .top-nav > nav { display: none !important; }
+
+  /* Top nav: reduce padding */
+  .top-nav { padding: 0 1rem; height: 56px; }
+
+  /* Cards: reduce padding on mobile */
+  .card, .card-elevated, .card-warm { padding: 1rem; }
+  .card-sm { padding: 0.875rem; }
+
+  /* Metric card: reduce padding */
+  .metric-card { padding: 1rem 1.125rem; }
+
+  /* Table: allow horizontal scroll */
+  .audit-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Page content padding */
+  main > * { padding-left: 1rem !important; padding-right: 1rem !important; }
+}
