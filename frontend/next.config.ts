@@ -21,13 +21,7 @@ const nextConfig: NextConfig = {
 };
 
 export default withSentryConfig(nextConfig, {
-  // Suppress build output unless running in CI
   silent: !process.env.CI,
-  // Source map upload — set SENTRY_ORG + SENTRY_PROJECT env vars to enable
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
-  // Don't fail the build if Sentry upload errors (e.g. no org/project set)
-  errorHandler(err, invokeErr, compilation) {
-    compilation.warnings.push(new Error(`[Sentry] ${err.message}`));
-  },
 });
