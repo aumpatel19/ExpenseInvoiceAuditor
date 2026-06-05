@@ -6,7 +6,7 @@ import { api, type DocumentListItem } from "@/lib/api";
 import StatusBadge from "../components/StatusBadge";
 import BackendError from "../components/BackendError";
 import Link from "next/link";
-import { Search, SlidersHorizontal, ArrowRight, TrendingUp } from "lucide-react";
+import { Search, SlidersHorizontal, ArrowRight, TrendingUp, Download } from "lucide-react";
 
 const PAGE_SIZE = 20;
 
@@ -56,9 +56,19 @@ export default function DocumentsPage() {
           <h1 style={{ fontSize: 28, fontWeight: 700, color: "var(--text-primary)", letterSpacing: "-0.03em" }}>Documents</h1>
           <p style={{ color: "var(--text-muted)", fontSize: 13.5, marginTop: 6 }}>All processed invoices and receipts</p>
         </div>
-        <Link href="/upload">
-          <button className="btn btn-primary" style={{ padding: "0.6rem 1.25rem" }}>+ Upload Document</button>
-        </Link>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            className="btn btn-ghost"
+            style={{ padding: "0.6rem 1rem", fontSize: 13, gap: 6 }}
+            onClick={() => api.exportDocumentsCSV(filter.status || undefined)}
+            title="Export visible documents as CSV"
+          >
+            <Download size={14} /> Export CSV
+          </button>
+          <Link href="/upload">
+            <button className="btn btn-primary" style={{ padding: "0.6rem 1.25rem" }}>+ Upload Document</button>
+          </Link>
+        </div>
       </motion.div>
 
       {/* Filters bar */}

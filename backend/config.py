@@ -1,7 +1,9 @@
 from pydantic_settings import BaseSettings
-from pydantic import Field
+from pydantic import Field, model_validator
 from typing import List
-import os
+
+
+_DEFAULT_JWT_SECRET = "dev-only-secret-replace-in-production-32x"
 
 
 class Settings(BaseSettings):
@@ -25,7 +27,7 @@ class Settings(BaseSettings):
     policy_allow_weekend_expenses: bool = Field(default=False, alias="POLICY_ALLOW_WEEKEND_EXPENSES")
 
     # Auth
-    jwt_secret: str = Field(default="dev-only-secret-replace-in-production-32x", alias="JWT_SECRET")
+    jwt_secret: str = Field(default=_DEFAULT_JWT_SECRET, alias="JWT_SECRET")
     jwt_expire_hours: int = Field(default=24, alias="JWT_EXPIRE_HOURS")
 
     # CORS — comma-separated list of allowed origins
@@ -34,6 +36,30 @@ class Settings(BaseSettings):
     # App
     app_env: str = Field(default="development", alias="APP_ENV")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
+
+    # S3 / file storage (optional — falls back to MongoDB if not set)
+    s3_bucket_name: str = Field(default="", alias="S3_BUCKET_NAME")
+    aws_access_key_id: str = Field(default="", alias="AWS_ACCESS_KEY_ID")
+    aws_secret_access_key: str = Field(default="", alias="AWS_SECRET_ACCESS_KEY")
+    aws_region: str = Field(default="us-east-1", alias="AWS_REGION")
+    s3_endpoint_url: str = Field(default="", alias="S3_ENDPOINT_URL")  # for Cloudflare R2 / MinIO
+
+    # Sentry (optional — only initializes if DSN is provided)
+    sentry_dsn: str = Field(default="", alias="SENTRY_DSN")
+
+    # Email notifications via Resend (optional)
+    email_notifications_enabled: bool = Field(default=False, alias="EMAIL_NOTIFICATIONS_ENABLED")
+    resend_api_key: str = Field(default="", alias="RESEND_API_KEY")
+    email_from: str = Field(default="AuditFlow <noreply@auditflow.app>", alias="EMAIL_FROM")
+
+    @model_validator(mode="after")
+    def validate_production_secrets(self) -> "Settings":
+        if self.app_env == "production" and self.jwt_secret == _DEFAULT_JWT_SECRET:
+            raise ValueError(
+                "JWT_SECRET must be changed from the default in production. "
+                "Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\""
+            )
+        return self
 
     @property
     def cors_origins_list(self) -> List[str]:

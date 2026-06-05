@@ -1,0 +1,95 @@
+# Render Blueprint — defines the AuditFlow backend service.
+# Deploy at: https://dashboard.render.com/blueprints
+# Docs: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: auditflow-backend
+    runtime: docker
+    dockerfilePath: ./BACKEND/Dockerfile
+    dockerContext: ./BACKEND
+    # Change to "starter" ($7/mo) for always-on. Free tier sleeps after 15 min inactivity.
+    plan: free
+    healthCheckPath: /healthz
+    autoDeploy: true
+
+    envVars:
+      # ── MongoDB ─────────────────────────────────────────────────────────
+      - key: MONGO_URI
+        sync: false          # Set in Render dashboard — paste your MongoDB Atlas URI
+
+      - key: DB_NAME
+        value: expense_auditor
+
+      # ── App ──────────────────────────────────────────────────────────────
+      - key: APP_ENV
+        value: production
+
+      - key: LOG_LEVEL
+        value: INFO
+
+      # ── Auth ─────────────────────────────────────────────────────────────
+      - key: JWT_SECRET
+        generateValue: true  # Render auto-generates a secure random value
+
+      - key: JWT_EXPIRE_HOURS
+        value: "24"
+
+      # ── CORS — update to your Vercel frontend URL ─────────────────────
+      - key: CORS_ORIGINS
+        value: https://expense-invoice-auditor.vercel.app
+
+      # ── OCR ──────────────────────────────────────────────────────────────
+      - key: OCR_PROVIDER
+        value: tesseract
+
+      - key: MAX_UPLOAD_MB
+        value: "20"
+
+      # ── Policy defaults ───────────────────────────────────────────────
+      - key: POLICY_AMOUNT_THRESHOLD
+        value: "1000.0"
+
+      - key: POLICY_ALLOWED_CURRENCIES
+        value: USD,EUR,GBP,INR
+
+      - key: POLICY_ALLOW_WEEKEND_EXPENSES
+        value: "false"
+
+      # ── LLM (optional) ────────────────────────────────────────────────
+      - key: LLM_ENABLED
+        value: "false"
+
+      - key: OPENAI_API_KEY
+        sync: false          # Set only if LLM_ENABLED=true
+
+      # ── S3 / File storage (optional) ─────────────────────────────────
+      # Leave empty to store files in MongoDB. Fill in to use S3 or Cloudflare R2.
+      - key: S3_BUCKET_NAME
+        value: ""
+
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+
+      - key: AWS_REGION
+        value: us-east-1
+
+      - key: S3_ENDPOINT_URL
+        value: ""            # For Cloudflare R2: https://<account_id>.r2.cloudflarestorage.com
+
+      # ── Sentry (optional) ────────────────────────────────────────────
+      - key: SENTRY_DSN
+        sync: false          # Paste DSN from https://sentry.io if you want error tracking
+
+      # ── Email notifications (optional) ───────────────────────────────
+      - key: EMAIL_NOTIFICATIONS_ENABLED
+        value: "false"
+
+      - key: RESEND_API_KEY
+        sync: false          # Paste API key from https://resend.com
+
+      - key: EMAIL_FROM
+        value: AuditFlow <noreply@yourdomain.com>

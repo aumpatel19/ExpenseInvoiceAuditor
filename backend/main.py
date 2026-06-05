@@ -12,6 +12,18 @@ from config import settings
 from api import documents, metrics, eval as eval_router, policies
 from api.auth import router as auth_router
 
+# Sentry — opt-in, only initializes when SENTRY_DSN is set
+if settings.sentry_dsn:
+    import sentry_sdk
+    from sentry_sdk.integrations.fastapi import FastApiIntegration
+    from sentry_sdk.integrations.starlette import StarletteIntegration
+    sentry_sdk.init(
+        dsn=settings.sentry_dsn,
+        traces_sample_rate=0.1,
+        integrations=[StarletteIntegration(), FastApiIntegration()],
+        environment=settings.app_env,
+    )
+
 limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
 _auth = [Depends(get_current_user)]
 

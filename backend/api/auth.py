@@ -1,5 +1,6 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
+from typing import Optional
 
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, field_validator
@@ -12,7 +13,7 @@ router = APIRouter()
 
 
 def _default_policies(username: str) -> list:
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     return [
         {
             "rule_id": str(uuid.uuid4()), "username": username,
@@ -88,6 +89,7 @@ def _default_policies(username: str) -> list:
 class SignupRequest(BaseModel):
     username: str
     password: str
+    email: Optional[str] = None
 
     @field_validator("username")
     @classmethod
@@ -104,6 +106,16 @@ class SignupRequest(BaseModel):
     def password_valid(cls, v: str) -> str:
         if len(v) < 8:
             raise ValueError("Password must be at least 8 characters.")
+        return v
+
+    @field_validator("email")
+    @classmethod
+    def email_valid(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        v = v.strip().lower()
+        if "@" not in v or "." not in v.split("@")[-1]:
+            raise ValueError("Invalid email address.")
         return v
 
 
@@ -124,10 +136,10 @@ async def signup(body: SignupRequest):
     if existing:
         raise HTTPException(status_code=409, detail="Username already taken.")
 
-    await users_col().insert_one({
-        "username": body.username,
-        "password_hash": hash_password(body.password),
-    })
+    user_doc: dict = {"username": body.username, "password_hash": hash_password(body.password)}
+    if body.email:
+        user_doc["email"] = body.email
+    await users_col().insert_one(user_doc)
 
     # Seed default policies for the new user
     await policy_rules_col().insert_many(_default_policies(body.username))

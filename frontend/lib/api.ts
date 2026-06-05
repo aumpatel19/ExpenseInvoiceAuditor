@@ -195,6 +195,49 @@ export const api = {
     return res.json();
   },
 
+  uploadDocumentsBatch: async (files: File[]): Promise<{
+    documents: Array<{ filename: string; document_id: string | null; status: string; error: string | null }>
+  }> => {
+    const token = getToken();
+    const form = new FormData();
+    files.forEach((f) => form.append("files", f));
+    const res = await fetch(`${API_BASE}/documents/upload-batch`, {
+      method: "POST",
+      body: form,
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (res.status === 401) { handleUnauthorized(); throw new Error("Session expired."); }
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || `Batch upload failed: ${res.status}`);
+    }
+    return res.json();
+  },
+
+  getDocumentStatus: (id: string) =>
+    apiFetch<{ status: string; updated_at: string | null }>(`/documents/${id}/status`),
+
+  exportDocumentsCSV: (status?: string): void => {
+    const token = getToken();
+    const qs = status ? `?status=${encodeURIComponent(status)}` : "";
+    const url = `${API_BASE}/documents/export${qs}`;
+    // Trigger download via a temporary anchor
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "documents_export.csv";
+    // Attach auth token via URL is not ideal — use fetch + blob for authenticated download
+    fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      .then((r) => r.blob())
+      .then((blob) => {
+        const blobUrl = URL.createObjectURL(blob);
+        a.href = blobUrl;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+      });
+  },
+
   // Eval
   triggerEval: () =>
     apiFetch<EvalRun>("/eval/run", { method: "POST", body: JSON.stringify({}) }),

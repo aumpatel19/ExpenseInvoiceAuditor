@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lock, User, Eye, EyeOff, ShieldCheck, UserPlus, LogIn } from "lucide-react";
+import { Lock, User, Eye, EyeOff, ShieldCheck, UserPlus, LogIn, Mail } from "lucide-react";
 
 interface Props {
   onLogin: (token: string, username: string) => void;
@@ -15,6 +15,7 @@ export default function LoginForm({ onLogin }: Props) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [email, setEmail] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +25,7 @@ export default function LoginForm({ onLogin }: Props) {
     setError(null);
     setPassword("");
     setConfirm("");
+    setEmail("");
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -41,7 +43,7 @@ export default function LoginForm({ onLogin }: Props) {
       const res = await fetch(`${API_BASE}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, ...(mode === "signup" && email ? { email } : {}) }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -154,6 +156,31 @@ export default function LoginForm({ onLogin }: Props) {
                 </button>
               </div>
             </div>
+
+            {/* Email (signup only — optional, used for audit notifications) */}
+            <AnimatePresence>
+              {mode === "signup" && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+                  style={{ overflow: "hidden" }}
+                >
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.07em", display: "block", marginBottom: 6 }}>
+                    Email <span style={{ color: "var(--text-muted)", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional — for audit notifications)</span>
+                  </label>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 12px", borderRadius: "var(--radius-md)", border: "1.5px solid var(--border)", background: "var(--bg-subtle)" }}>
+                    <Mail size={14} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      autoComplete="email"
+                      style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontSize: 13.5, color: "var(--text-primary)", padding: "10px 0", fontFamily: "inherit" }}
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Confirm password (signup only) */}
             <AnimatePresence>
