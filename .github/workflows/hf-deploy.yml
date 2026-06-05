@@ -6,6 +6,7 @@ on:
     paths:
       - "BACKEND/**"
       - ".github/workflows/hf-deploy.yml"
+  workflow_dispatch: # allows manual trigger from GitHub Actions tab
 
 jobs:
   sync:
