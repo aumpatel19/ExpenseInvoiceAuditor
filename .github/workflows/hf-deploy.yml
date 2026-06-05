@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "BACKEND/**"
+      - "backend/**"
       - ".github/workflows/hf-deploy.yml"
   workflow_dispatch:
 
@@ -46,7 +46,7 @@ jobs:
             --exclude='__pycache__/' \
             --exclude='*.pyc' \
             --exclude='.venv/' \
-            BACKEND/ hf_repo/
+            backend/ hf_repo/
           echo "✅ Files synced"
 
       - name: Push to HF Space
