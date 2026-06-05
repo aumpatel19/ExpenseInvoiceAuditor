@@ -6,7 +6,7 @@ on:
     paths:
       - "BACKEND/**"
       - ".github/workflows/hf-deploy.yml"
-  workflow_dispatch: # allows manual trigger from GitHub Actions tab
+  workflow_dispatch:
 
 jobs:
   sync:
@@ -15,21 +15,31 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Push to Hugging Face Space
+      - name: Validate secrets
+        run: |
+          if [ -z "${{ secrets.HF_TOKEN }}" ]; then
+            echo "❌ HF_TOKEN secret is not set. Add it in GitHub → Settings → Secrets."
+            exit 1
+          fi
+          if [ -z "${{ secrets.HF_SPACE }}" ]; then
+            echo "❌ HF_SPACE secret is not set. It should be: yourusername/auditflow-backend"
+            exit 1
+          fi
+          echo "✅ Secrets look good. HF_SPACE = ${{ secrets.HF_SPACE }}"
+
+      - name: Clone HF Space repo
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           HF_SPACE: ${{ secrets.HF_SPACE }}
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
+          git clone "https://user:${HF_TOKEN}@huggingface.co/spaces/${HF_SPACE}" hf_repo
+          echo "✅ Cloned HF Space successfully"
 
-          # Clone the HF Space repo
-          git clone "https://hf_user:${HF_TOKEN}@huggingface.co/spaces/${HF_SPACE}" hf_repo
-
-          # Sync BACKEND/ → Space root (skipping secrets and caches)
+      - name: Sync BACKEND → Space root
+        run: |
           rsync -av --delete \
             --exclude='.git/' \
             --exclude='.env' \
@@ -37,8 +47,13 @@ jobs:
             --exclude='*.pyc' \
             --exclude='.venv/' \
             BACKEND/ hf_repo/
+          echo "✅ Files synced"
 
-          # Commit and push only if something changed
+      - name: Push to HF Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_SPACE: ${{ secrets.HF_SPACE }}
+        run: |
           cd hf_repo
           git add -A
           if git diff --staged --quiet; then
@@ -46,4 +61,5 @@ jobs:
           else
             git commit -m "deploy: ${GITHUB_SHA::7}"
             git push
+            echo "✅ Pushed to HF Space — build starting on HF"
           fi
