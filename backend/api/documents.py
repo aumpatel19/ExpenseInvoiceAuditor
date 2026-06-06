@@ -22,7 +22,7 @@ from services.extraction.extractor import extract_from_text
 from services.validation.validator import validate_document
 from services.audit.rule_engine import run_rule_checks
 from services.llm.llm_audit import run_llm_checks
-from services.storage.file_store import save_file, load_file
+from services.storage.file_store import save_file, load_file, delete_file
 from services.email.sender import send_audit_complete
 from utils.logger import log_stage
 
@@ -428,6 +428,22 @@ async def reprocess_document(
         process_document_pipeline, document_id, file_bytes, mime_type, current_user["username"]
     )
     return {"message": "Reprocessing started.", "document_id": document_id}
+
+
+@router.delete("/documents/{document_id}")
+async def delete_document(document_id: str, current_user: dict = Depends(get_current_user)):
+    doc = await documents_col().find_one(
+        {"id": document_id, "username": current_user["username"]}, {"_id": 0, "id": 1}
+    )
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found.")
+
+    await documents_col().delete_one({"id": document_id})
+    await extracted_payloads_col().delete_one({"document_id": document_id})
+    await audit_results_col().delete_one({"document_id": document_id})
+    await delete_file(document_id)
+
+    return {"message": "Document deleted.", "document_id": document_id}
 
 
 @router.get("/documents/{document_id}/audit")

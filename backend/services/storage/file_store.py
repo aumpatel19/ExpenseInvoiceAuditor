@@ -99,6 +99,32 @@ async def _save_to_mongo(document_id: str, username: str, file_bytes: bytes, mim
     )
 
 
+async def delete_file(document_id: str) -> None:
+    if settings.s3_bucket_name:
+        try:
+            await _delete_from_s3(document_id)
+        except Exception as e:
+            logger.error(f"[Storage] S3 delete failed for {document_id}: {e}")
+    await file_storage_col().delete_one({"document_id": document_id})
+
+
+async def _delete_from_s3(document_id: str) -> None:
+    import boto3
+
+    s3 = boto3.client(
+        "s3",
+        aws_access_key_id=settings.aws_access_key_id or None,
+        aws_secret_access_key=settings.aws_secret_access_key or None,
+        region_name=settings.aws_region,
+        endpoint_url=settings.s3_endpoint_url or None,
+    )
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(
+        None,
+        lambda: s3.delete_object(Bucket=settings.s3_bucket_name, Key=f"documents/{document_id}"),
+    )
+
+
 async def _load_from_mongo(document_id: str) -> tuple[Optional[bytes], Optional[str]]:
     stored = await file_storage_col().find_one({"document_id": document_id})
     if not stored:

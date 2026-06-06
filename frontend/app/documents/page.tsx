@@ -6,7 +6,8 @@ import { api, type DocumentListItem } from "@/lib/api";
 import StatusBadge from "../components/StatusBadge";
 import BackendError from "../components/BackendError";
 import Link from "next/link";
-import { Search, SlidersHorizontal, ArrowRight, TrendingUp, Download } from "lucide-react";
+import { Search, SlidersHorizontal, ArrowRight, TrendingUp, Download, Trash2 } from "lucide-react";
+import { showToast } from "../components/Toast";
 
 const PAGE_SIZE = 20;
 
@@ -17,6 +18,7 @@ export default function DocumentsPage() {
   const [filter, setFilter] = useState({ status: "", vendor: "", type: "" });
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   const load = (pageNum = 0) => {
     setLoading(true);
@@ -34,6 +36,20 @@ export default function DocumentsPage() {
       })
       .catch((e) => setError(e instanceof Error ? e.message : "Failed to load"))
       .finally(() => setLoading(false));
+  };
+
+  const handleDelete = async (id: string, filename: string) => {
+    if (!confirm(`Delete "${filename}"? This cannot be undone.`)) return;
+    setDeleting(id);
+    try {
+      await api.deleteDocument(id);
+      setDocuments((prev) => prev.filter((d) => d.id !== id));
+      showToast(`"${filename}" deleted.`);
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "Delete failed.", "error");
+    } finally {
+      setDeleting(null);
+    }
   };
 
   useEffect(() => { setPage(0); load(0); }, [filter]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -114,7 +130,7 @@ export default function DocumentsPage() {
         <div style={{ borderRadius: "var(--radius-lg)", border: "1px solid var(--border)", overflow: "hidden" }}>
           <table className="audit-table">
             <thead>
-              <tr><th>File</th><th>Type</th><th>Vendor</th><th>Amount</th><th>Date</th><th>Uploaded</th><th>Status</th><th style={{ width: 60 }}></th></tr>
+              <tr><th>File</th><th>Type</th><th>Vendor</th><th>Amount</th><th>Date</th><th>Uploaded</th><th>Status</th><th style={{ width: 100 }}></th></tr>
             </thead>
             <tbody>
               {loading && (
@@ -145,11 +161,22 @@ export default function DocumentsPage() {
                   <td style={{ whiteSpace: "nowrap", color: "var(--text-muted)", fontSize: 12 }}>{new Date(doc.created_at).toLocaleDateString()}</td>
                   <td><StatusBadge status={doc.status} /></td>
                   <td>
-                    <Link href={`/documents/${doc.id}`}>
-                      <button className="btn btn-ghost" style={{ padding: "0.3rem 0.625rem", fontSize: 12, gap: 4 }}>
-                        View <ArrowRight size={11} />
+                    <div style={{ display: "flex", gap: 4 }}>
+                      <Link href={`/documents/${doc.id}`}>
+                        <button className="btn btn-ghost" style={{ padding: "0.3rem 0.625rem", fontSize: 12, gap: 4 }}>
+                          View <ArrowRight size={11} />
+                        </button>
+                      </Link>
+                      <button
+                        className="btn btn-ghost"
+                        style={{ padding: "0.3rem 0.5rem", fontSize: 12, color: "var(--status-failed-fg)", opacity: deleting === doc.id ? 0.5 : 1 }}
+                        disabled={deleting === doc.id}
+                        onClick={() => handleDelete(doc.id, doc.filename)}
+                        title="Delete document"
+                      >
+                        <Trash2 size={12} />
                       </button>
-                    </Link>
+                    </div>
                   </td>
                 </motion.tr>
               ))}

@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { useParams } from "next/navigation";
-import { Copy, Download, ChevronDown, ChevronUp, CheckCircle2, AlertCircle, Clock, Zap, Bot, ArrowLeft } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { Copy, Download, ChevronDown, ChevronUp, CheckCircle2, AlertCircle, Clock, Zap, Bot, ArrowLeft, RefreshCw, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { api, type DocumentDetail, type AuditFinding, type ProcessingLog } from "@/lib/api";
 import StatusBadge from "../../components/StatusBadge";
+import { showToast } from "../../components/Toast";
 
 // ── JSON Viewer ──────────────────────────────────────────────────────────────
 function JsonViewer({ data }: { data: Record<string, unknown> }) {
@@ -132,9 +133,41 @@ function VerdictBanner({ status, confidence }: { status: string; confidence: num
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function DocumentDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const [data, setData] = useState<DocumentDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"audit" | "json" | "logs">("audit");
+  const [reprocessing, setReprocessing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleReprocess = async () => {
+    if (!id) return;
+    setReprocessing(true);
+    try {
+      await api.reprocessDocument(id);
+      showToast("Re-audit started — refresh in a moment.");
+      setTimeout(() => api.getDocument(id).then(setData).catch(console.error), 3000);
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "Re-audit failed.", "error");
+    } finally {
+      setReprocessing(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!id || !data) return;
+    const filename = (data.document as Record<string, unknown>).filename as string ?? "this document";
+    if (!confirm(`Delete "${filename}"? This cannot be undone.`)) return;
+    setDeleting(true);
+    try {
+      await api.deleteDocument(id);
+      showToast(`"${filename}" deleted.`);
+      router.push("/documents");
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "Delete failed.", "error");
+      setDeleting(false);
+    }
+  };
 
   useEffect(() => {
     if (id) {
@@ -175,7 +208,7 @@ export default function DocumentDetailPage() {
           </button>
         </Link>
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)" }}>
+          <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)", flex: 1 }}>
             {(doc.filename as string) ?? "Document"}
           </h1>
           <StatusBadge status={(doc.status as string) ?? ""} />
@@ -184,6 +217,29 @@ export default function DocumentDetailPage() {
               <Bot size={9} />LLM Used
             </span>
           )}
+          <div style={{ display: "flex", gap: 6, marginLeft: "auto" }}>
+            {["error", "validation_failed"].includes((doc.status as string) ?? "") && (
+              <button
+                className="btn btn-ghost"
+                style={{ fontSize: 12, gap: 5, opacity: reprocessing ? 0.6 : 1 }}
+                onClick={handleReprocess}
+                disabled={reprocessing}
+              >
+                <RefreshCw size={13} style={{ animation: reprocessing ? "spin 1s linear infinite" : "none" }} />
+                {reprocessing ? "Starting…" : "Re-audit"}
+              </button>
+            )}
+            <button
+              className="btn btn-ghost"
+              style={{ fontSize: 12, gap: 5, color: "var(--status-failed-fg)", opacity: deleting ? 0.5 : 1 }}
+              onClick={handleDelete}
+              disabled={deleting}
+              title="Delete document"
+            >
+              <Trash2 size={13} />
+              Delete
+            </button>
+          </div>
         </div>
         <div style={{ display: "flex", gap: 18, fontSize: 12, color: "var(--text-muted)", marginTop: 8, flexWrap: "wrap" }}>
           <span>ID: <code style={{ fontSize: 11, background: "var(--bg-subtle)", padding: "1px 5px", borderRadius: 4 }}>{id}</code></span>

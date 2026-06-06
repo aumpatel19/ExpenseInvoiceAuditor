@@ -238,6 +238,12 @@ export const api = {
       });
   },
 
+  deleteDocument: (id: string) =>
+    apiFetch<{ message: string }>(`/documents/${id}`, { method: "DELETE" }),
+
+  reprocessDocument: (id: string) =>
+    apiFetch<{ message: string; document_id: string }>(`/documents/${id}/process`, { method: "POST" }),
+
   // Eval
   triggerEval: () =>
     apiFetch<EvalRun>("/eval/run", { method: "POST", body: JSON.stringify({}) }),

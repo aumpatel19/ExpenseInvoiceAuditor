@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import AuthShell from "./components/AuthShell";
+import { ToastContainer } from "./components/Toast";
 
 export const metadata: Metadata = {
   title: "AuditFlow — Expense & Invoice Auditor",
@@ -16,6 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         alignItems: "stretch",
       }}>
         <AuthShell>{children}</AuthShell>
+        <ToastContainer />
       </body>
     </html>
   );
